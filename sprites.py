@@ -2,7 +2,7 @@ import random
 
 import pygame
 
-from constants import EVENT_SPAWN_ENEMY, EVENT_ENEMY_BREACH, EVENT_PLAYER_DEAD
+from constants import EVENT_SPAWN_ENEMY, EVENT_ENEMY_BREACH
 
 
 class Sprite(pygame.sprite.Sprite):
@@ -143,53 +143,54 @@ class SpriteManager:
     # to the corresponding groups and carry out all the accompanying actions.
     def create_player(self):
         player = Player(
-                self.resources.images['player'],
-                (self.screen_width / 2, self.screen_height - 30),
-                self.params
-                )
+            self.resources.images['player'],
+            (self.screen_width / 2, self.screen_height - 30),
+            self.params
+        )
         player.add(self.player_group, self.sprites)
         return player
 
     def create_enemy(self):
         enemy = Enemy(
-                self.resources.images['enemy'],
-                (random.randint(0, self.screen_width), 0),
-                self.params
-                )
+            self.resources.images['enemy'],
+            (random.randint(0, self.screen_width), 0),
+            self.params
+        )
         enemy.add(self.enemies, self.sprites)
         return enemy
 
     def create_projectile(self):
         projectile = Projectile(
-                self.resources.images['projectile'],
-                self.player_group.sprite.rect.midtop,
-                self.params
-                )
+            self.resources.images['projectile'],
+            self.player_group.sprite.rect.midtop,
+            self.params
+        )
         projectile.add(self.projectiles, self.sprites)
         self.resources.sounds['shot'].play()
         return projectile
 
     def create_explosion(self, ship):
         explosion = Explosion(
-                self.resources.images['explosion'],
-                ship.rect.center,
-                self.params
-                )
+            self.resources.images['explosion'],
+            ship.rect.center,
+            self.params
+        )
         explosion.add(self.sprites)
         self.resources.sounds['explosion'].play()
         return explosion
 
     # Collisions detection
     def handle_player_collisions(self):
-        player_damage = 0
         score = 0
+        player_damage = 0
 
         collisions = pygame.sprite.groupcollide(
             self.player_group, 
             self.enemies, 
             False, 
             True, 
-            pygame.sprite.collide_mask)
+            pygame.sprite.collide_mask
+        )
 
         if collisions:
             self.create_explosion(self.player_group.sprite)
@@ -198,12 +199,18 @@ class SpriteManager:
                 player_damage += 1
                 score += 1
 
-        return (player_damage, score)
+        return player_damage, score
 
     def handle_projectiles_collisions(self):
         score = 0
 
-        collisions = pygame.sprite.groupcollide(self.projectiles, self.enemies, True, True, pygame.sprite.collide_mask)
+        collisions = pygame.sprite.groupcollide(
+            self.projectiles, 
+            self.enemies, 
+            True, 
+            True, 
+            pygame.sprite.collide_mask
+        )
         if collisions:
             for projectile in collisions:
                 for enemy in collisions[projectile]:
@@ -224,4 +231,5 @@ class SpriteManager:
             timeout = random.randint(self.params['spawn_timer_min'], self.params['spawn_timer_max'])
         else:
             timeout = ms
+
         pygame.time.set_timer(EVENT_SPAWN_ENEMY, timeout)
