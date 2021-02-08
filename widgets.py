@@ -1,5 +1,56 @@
 import pygame
-from resources import Text
+
+
+class Text:
+    """Encapsulates the functionality needed to work with text objects.  
+    In Pygame text object itself is just a Surface.  
+    To create such a surface you need to call a `render()`  
+    method from font object.
+
+    After rendering text object is immutable,  
+    so in order to change text or color you must re-render  
+    this object with new parameters.
+    """
+    def __init__(self, message, font, color):
+        # We need to save initial arguments,
+        # because if we'll want to change color or message,
+        # we'll need to re-render the whole object
+        self.message = message
+        self.font = font
+        self.color = color
+
+        # Creating a surface
+        self.obj = font.render(message, True, color)
+        # Calculating size and position
+        self.rect = self.obj.get_rect()
+
+    def draw(self, surface):
+        """Shortcut for `surface.blit(self.obj, self.rect)
+
+        Args:
+            surface (pygame.Surface)
+        """
+        surface.blit(self.obj, self.rect)
+
+    def change_color(self, color):
+        """Re-renders text with new color.
+
+        Args:
+            color (Tuple[int], pygame.Color): RGB color
+        """
+        self.obj = self.font.render(self.message, True, color)
+
+    def change_message(self, message):
+        """Re-renders text with new message.
+
+        Args:
+            message (str)
+        """
+        self.obj = self.font.render(message, True, self.color)
+        self.rect.width = self.obj.get_rect().width
+        # Don't reassign `self.rect` with `self.obj.get_rect()`,
+        # because it will reset position (rect.x, rect.y).
+        # Just change width to resize rect for new text.
 
 
 class Menu:
@@ -201,9 +252,4 @@ class Bar:
         Args:
             surface (Window)
         """
-        # I'm using `surface.surface` here, because usually `draw` methods receives
-        # `Window` instance, which has it's own `blit` method.
-        # But in `Bar` I'm using `pygame.draw.rect` instead of `blit`,
-        # therefore I need to pass `surface` attribute of `Window`,
-        # not `Window` itself.
-        pygame.draw.rect(surface.surface, self.color, self.rect)
+        pygame.draw.rect(surface, self.color, self.rect)
