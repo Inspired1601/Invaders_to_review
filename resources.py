@@ -57,28 +57,30 @@ class Image:
         width = int(width)
         height = int(height)
 
-        if not width and not height:      # 0's are default values
-            return
-
         # If both arguments were passed
         # we should scale image to the given size
         # even if the initial aspect ratio will be broken
         if width and height:
-            self.img = pygame.transform.scale(self.img, (width, height))
+            new_size = width, height
 
         # But if only 1 argument passed
         # we scale image to the given width/height
         # maintaining the initial aspect ratio
+        elif width or height: 
+            new_size = self._calculate_size_keeping_aspect_ratio(width, height)
+
+        self.img = pygame.transform.scale(self.img, new_size)
+
+    def _calculate_size_keeping_aspect_ratio(self, width, height):
+        old_size = self.img.get_size()
+        aspect_ratio = old_size[0] / old_size[1]
+
+        if width:
+            new_size = (width, int(width / aspect_ratio))
         else:
-            old_size = self.img.get_size()
-            wh_ratio = old_size[0] / old_size[1]
+            new_size = (int(height * aspect_ratio), height)
 
-            if width:
-                new_size = (width, int(width / wh_ratio))
-            else:
-                new_size = (int(height * wh_ratio), height)
-
-            self.img = pygame.transform.scale(self.img, new_size)
+        return new_size
 
     def get_mask(self):
         """Creates a mask from surface.
