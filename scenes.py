@@ -1,11 +1,8 @@
-import random
-
 import pygame
 
-from constants import EVENT_SPAWN_ENEMY, EVENT_ENEMY_BREACH, EVENT_PLAYER_DEAD
-from resources import Text
+from constants import EVENT_SPAWN_ENEMY, EVENT_ENEMY_BREACH
 from sprites import SpriteManager
-from widgets import Menu, LabelPanel, EnergyBar
+from widgets import Text, Menu, LabelPanel, EnergyBar
 
 
 class Scene:
@@ -24,17 +21,17 @@ class Scene:
     def handle_event(self, event):
         """Will be overrided in subclasses.
         """
-        pass
+        raise NotImplementedError('Scene.handle_event should be overrided in subclasses.')
 
     def update(self):
         """Will be overrided in subclasses.
         """
-        pass
+        raise NotImplementedError('Scene.update should be overrided in subclasses.')
 
     def draw(self, surface):
         """Will be overrided in subclasses.
         """
-        pass
+        raise NotImplementedError('Scene.draw should be overrided in subclasses.')
 
 
 class MenuScene(Scene):
@@ -50,6 +47,12 @@ class MenuScene(Scene):
         if event.type == pygame.KEYDOWN:
             self.handle_keypress(event.key)
 
+    def update(self):
+        pass
+
+    def draw(self, surface):
+        self.menu.draw(surface)
+
     def handle_keypress(self, key):
         # If one of the valid keys is pressed, then play the `beep` sound.
         if key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_SPACE, pygame.K_RETURN):
@@ -61,9 +64,6 @@ class MenuScene(Scene):
             self.index = self.menu.switch(1)    # Move to 1 step right
         elif key in (pygame.K_SPACE, pygame.K_RETURN):
             self.next_scene = MainScene(self.resources, self.index)     # `index` is difficulty
-
-    def draw(self, surface):
-        self.menu.draw(surface)
 
 
 class MainScene(Scene):
@@ -85,7 +85,7 @@ class MainScene(Scene):
         self.energy_bar = EnergyBar(
             size=(100, 20), 
             max_energy=self.player.max_energy
-            )
+        )
 
         # Starting background processes
         self.resources.sounds['ost'].play(-1)   # -1 means `loop indefinitely`
@@ -99,14 +99,16 @@ class MainScene(Scene):
         # EVENT_ENEMY_BREACH is emitted by enemy when it reached bottom screen border.
         elif event.type == EVENT_ENEMY_BREACH:
             self.handle_enemy_breach()
-        # EVENT_ENEMY_BREACH is emitted when lives become <= 0.
-        elif event.type == EVENT_PLAYER_DEAD:
-            self.next_scene = FinalScene(self.resources, self.sprites)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.next_scene = MenuScene(self.resources)
 
     def update(self):
+        if not self.params['player_lives']:
+            self.kill_player()
+            self.next_scene = FinalScene(self.resources, self.sprites)
+            return
+
         self.clock.tick()           # To measure FPS
 
         # Handles `long` keypresses, which can't be conveniently handled via events 
@@ -120,7 +122,7 @@ class MainScene(Scene):
             f'Lives: {self.params["player_lives"]}',
             f'Score: {self.score}',
             f'FPS: {int(self.clock.get_fps())}'
-            ))
+        ))
 
     def draw(self, surface):
         """Calls `draw` methods for every object in the scene.
@@ -140,10 +142,12 @@ class MainScene(Scene):
         2: Player has enough energy to fire.
         """
         current_time = pygame.time.get_ticks()
-        can_shoot = current_time - self.last_shot_time > self.params['player_cooldown']
-        can_shoot = can_shoot and self.player.energy >= self.params['shoot_cost']
+        time_since_last_shot = current_time - self.last_shot_time
 
-        if can_shoot:
+        cooldown_passed = time_since_last_shot > self.params['player_cooldown']
+        enough_energy = self.player.energy >= self.params['shoot_cost']
+
+        if cooldown_passed and enough_energy:
             self.sprites.create_projectile()
             self.last_shot_time = current_time
             self.player.energy -= self.params['shoot_cost']
@@ -181,7 +185,7 @@ class MainScene(Scene):
         """
         self.damage_player(1)
 
-        if self.params['player_lives'] > 0:
+        if self.params['player_lives']:
             self.resources.sounds['warning'].play()
 
     # This section is for secondary service functions
@@ -235,17 +239,17 @@ class MainScene(Scene):
             }
 
     def damage_player(self, amount):
-        """Deals `amount` of damage to player.
-        If player become dead - emits EVENT_PLAYER_DEAD.
+        """Decrease player's lives by `amount`.  
+        Lives can't go below 0.
 
         Args:
             amount (int):
         """
-        self.params['player_lives'] -= amount
+        self.params['player_lives'] = max(self.params['player_lives'] - amount, 0)
 
-        if self.params['player_lives'] <= 0:
-            self.sprites.create_explosion(self.player)
-            pygame.event.post(pygame.event.Event(EVENT_PLAYER_DEAD))
+    def kill_player(self):
+        self.sprites.create_explosion(self.player)
+        self.player.kill()
 
 
 class FinalScene(Scene):
@@ -261,7 +265,6 @@ class FinalScene(Scene):
         super().__init__(resources)
 
         self.sprites = sprites
-        self.remove_player_ship()
         self.change_enemies_velocity(10)
         self.sprites.set_enemy_spawn_timer(200)
 
@@ -281,12 +284,10 @@ class FinalScene(Scene):
         self.sprites.draw(surface)
         self.text.draw(surface)
 
-    def remove_player_ship(self):
-        self.sprites.player_group.sprite.kill()
-
     def change_enemies_velocity(self, velocity):
         for enemy in self.sprites.enemies:
             enemy.velocity = velocity
+
         self.sprites.params['enemy_velocity'] = velocity
 
     def create_lose_text(self):
