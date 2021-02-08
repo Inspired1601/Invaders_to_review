@@ -6,25 +6,19 @@ from resources import ResourceManager
 from scenes import MenuScene
 
 
-class Window:
-    """Creates a window of the specified size and provides a surface to draw on.
+class Screen:
+    """Creates a Screen of the specified size and provides a surface to draw on.
     """
     def __init__(self, size, caption='Space Invaders'):
-        self.width, self.height = self.size = size
-
         # Main surface to draw every game object on.
-        # `display.set_mode` creates a window
+        # `display.set_mode` creates a Screen
         # and returns a surface.
-        self.surface = pygame.display.set_mode(self.size)
+        self.surface = pygame.display.set_mode(size)
 
         pygame.display.set_caption(caption)
 
-    def blit(self, obj, pos):
-        """ `Blit` is `block image transfer`.
-        Every surface has this method to draw another surface onto itself
-        So `drawing` in pygame is basically `blitting one surface to another`.
-        """
-        self.surface.blit(obj, pos)
+    def get_surface(self):
+        return self.surface
 
 
 class Game:
@@ -38,14 +32,11 @@ class Game:
         update():               to update all objects' state
         draw():                 to blit every object from current scene
     """
-    def __init__(self, size, FPS=60):
-        # `pygame.init()` initializes every single module from pygame package.
-        # This call is necessary for using pygame functions.
+    def __init__(self, size, fps=60):
         pygame.init()
 
-        self.FPS = FPS
-        self.window = Window(size)
-        # Class for loading and storing resources like images and sounds.
+        self.FPS = fps
+        self.screen = Screen(size).get_surface()
         self.resources = ResourceManager()
 
         self.scene = MenuScene(self.resources)
@@ -61,16 +52,18 @@ class Game:
             # Slowing loop so it won't run faster than `FPS` times per second.
             # Otherwise game will run to fast, up to 1.5k+ FPS.
             clock.tick(self.FPS)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
                 else:
                     self.scene.handle_event(event)
+
             self.scene.update()
 
-            self.window.blit(self.resources.images['bg'].img, (0, 0))
+            self.screen.blit(self.resources.images['bg'].img, (0, 0))
             # Blits every object created in a current scene to the main surface
-            self.scene.draw(self.window)
+            self.scene.draw(self.screen)
             # `update` actually displays every "blitted" object on surfaces
             pygame.display.update()
 
@@ -78,4 +71,4 @@ class Game:
 
 
 if __name__ == '__main__':
-    Game(size=(800, 600), FPS=60)
+    Game(size=(800, 600), fps=60)
