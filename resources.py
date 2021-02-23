@@ -10,8 +10,8 @@ class Image:
     """
     def __init__(self, filename, width=0, height=0):
         self.img = self.load(filename)
-        self.convert()
-        self.scale(width, height)
+        self.img = self.convert()
+        self.img = self.scale(width, height)
         self.mask = self.get_mask()
 
     def load(self, filename):
@@ -40,10 +40,14 @@ class Image:
         """Converts image (array of pixels) into pygame's inner format,
         which blits on other surfaces much faster than regular images.
         """
-        if self.img.get_alpha():
-            self.img = self.img.convert_alpha()
+        img = self.img.copy()
+
+        if img.get_alpha():
+            img = img.convert_alpha()
         else:
-            self.img = self.img.convert()
+            img = img.convert()
+
+        return img
 
     def scale(self, width, height):
         """Scales image.
@@ -69,7 +73,7 @@ class Image:
         elif width or height: 
             new_size = self._calculate_size_keeping_aspect_ratio(width, height)
 
-        self.img = pygame.transform.scale(self.img, new_size)
+        return pygame.transform.scale(self.img, new_size)
 
     def _calculate_size_keeping_aspect_ratio(self, width, height):
         old_size = self.img.get_size()

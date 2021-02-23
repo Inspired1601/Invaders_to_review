@@ -20,17 +20,17 @@ class Text:
         self.color = color
 
         # Creating a surface
-        self.obj = font.render(message, True, color)
+        self.surface = font.render(message, True, color)
         # Calculating size and position
-        self.rect = self.obj.get_rect()
+        self.rect = self.surface.get_rect()
 
     def draw(self, surface):
-        """Shortcut for `surface.blit(self.obj, self.rect)
+        """Shortcut for `surface.blit(self.surface, self.rect)
 
         Args:
             surface (pygame.Surface)
         """
-        surface.blit(self.obj, self.rect)
+        surface.blit(self.surface, self.rect)
 
     def change_color(self, color):
         """Re-renders text with new color.
@@ -38,7 +38,7 @@ class Text:
         Args:
             color (Tuple[int], pygame.Color): RGB color
         """
-        self.obj = self.font.render(self.message, True, color)
+        self.surface = self.font.render(self.message, True, color)
 
     def change_message(self, message):
         """Re-renders text with new message.
@@ -46,8 +46,8 @@ class Text:
         Args:
             message (str)
         """
-        self.obj = self.font.render(message, True, self.color)
-        self.rect.width = self.obj.get_rect().width
+        self.surface = self.font.render(message, True, self.color)
+        self.rect.width = self.surface.get_rect().width
         # Don't reassign `self.rect` with `self.obj.get_rect()`,
         # because it will reset position (rect.x, rect.y).
         # Just change width to resize rect for new text.

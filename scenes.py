@@ -21,17 +21,17 @@ class Scene:
     def handle_event(self, event):
         """Will be overrided in subclasses.
         """
-        raise NotImplementedError('Scene.handle_event should be overrided in subclasses.')
+        raise NotImplementedError('Scene.handle_event should be implemented in subclasses.')
 
     def update(self):
         """Will be overrided in subclasses.
         """
-        raise NotImplementedError('Scene.update should be overrided in subclasses.')
+        raise NotImplementedError('Scene.update should be implemented in subclasses.')
 
     def draw(self, surface):
         """Will be overrided in subclasses.
         """
-        raise NotImplementedError('Scene.draw should be overrided in subclasses.')
+        raise NotImplementedError('Scene.draw should be implemented in subclasses.')
 
 
 class MenuScene(Scene):
@@ -51,6 +51,7 @@ class MenuScene(Scene):
         pass
 
     def draw(self, surface):
+        surface.blit(self.resources.images['bg'].img, (0, 0))
         self.menu.draw(surface)
 
     def handle_keypress(self, key):
@@ -130,6 +131,7 @@ class MainScene(Scene):
         Args:
             surface (Window):
         """
+        surface.blit(self.resources.images['bg'].img, (0, 0))
         self.sprites.draw(surface)
         self.labels.draw(surface)
         self.energy_bar.draw(surface)
@@ -281,6 +283,7 @@ class FinalScene(Scene):
         self.sprites.update()
 
     def draw(self, surface):
+        surface.blit(self.resources.images['bg'].img, (0, 0))
         self.sprites.draw(surface)
         self.text.draw(surface)
 
